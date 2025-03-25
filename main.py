@@ -31,8 +31,7 @@ except:
 try:
   # Bind the the server socket to a host and port
   # ~~~~ INSERT CODE ~~~~
-  port = 80
-  server.bind(('',port))
+  server.bind((proxyHost, proxyPort))
   # ~~~~ END CODE INSERT ~~~~
   print ('Port is bound')
 except:
@@ -67,7 +66,7 @@ while True:
   # Get HTTP request from client
   # and store it in the variable: message_bytes
   # ~~~~ INSERT CODE ~~~~
-  message = clientSocket.recv(1024)
+  message_bytes = clientSocket.recv(BUFFER_SIZE)
   # ~~~~ END CODE INSERT ~~~~
   message = message_bytes.decode('utf-8')
   print ('Received request:')
@@ -142,8 +141,8 @@ while True:
       address = socket.gethostbyname(hostname)
       # Connect to the origin server
       # ~~~~ INSERT CODE ~~~~
-      port = 8080
-      server.bind((address,port))
+      port = 80
+      originServerSocket.connect((address, port))
       # ~~~~ END CODE INSERT ~~~~
       print ('Connected to origin Server')
 
@@ -178,7 +177,7 @@ while True:
 
       # Get the response from the origin server
       # ~~~~ INSERT CODE ~~~~
-      originResponse = clientSocket.recv(1024)
+      originResponse = originServerSocket.recv(BUFFER_SIZE)
       # ~~~~ END CODE INSERT ~~~~
 
       # Send the response to the client
