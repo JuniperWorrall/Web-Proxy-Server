@@ -4,7 +4,8 @@ import sys
 import os
 import argparse
 import re
-import datetime
+from datetime import datetime, timedelta
+import json
 
 # 1MB buffer size
 BUFFER_SIZE = 1000000
@@ -120,8 +121,15 @@ while True:
     # Send back response to client 
     # ~~~~ INSERT CODE ~~~~
     with open(cacheLocation, 'rb') as cacheFile:
-        binaryCacheData = cacheFile.read()
-        clientSocket.sendall(binaryCacheData)
+        metadata = cacheFile.readline().decode('utf-8').strip()
+        cache_meta = json.loads(metadata)
+        expires = datetime.fromisoformat(cache_meta['expires'])
+        if datetime.now() < expires:
+          binaryCacheData = cacheFile.read()
+          clientSocket.sendall(binaryCacheData)
+          continue
+        else:
+          print('Cache expired at', expires)
     # ~~~~ END CODE INSERT ~~~~
     cacheFile.close()
     print ('Sent to the client:')
@@ -197,11 +205,33 @@ while True:
           originRedirectSocket.send(new_request.encode())
         
           originResponse = originRedirectSocket.recv(BUFFER_SIZE)
+          response_str = originResponse.decode('utf-8')
           originRedirectSocket.close()
       # ~~~~ END CODE INSERT ~~~~
 
       # Send the response to the client
       # ~~~~ INSERT CODE ~~~~
+      headers_end = response_str.find('\r\n\r\n')
+      if headers_end == -1:
+          headers = []
+          body = response_str
+      else:
+          headers = response_str[:headers_end].split('\r\n')
+          body = response_str[headers_end+4:]
+
+      status_code = response_str.split(' ')[1] if len(response_str.split(' ')) > 1 else '000'
+      cache_control = {}
+      for line in headers:
+        if line.lower().startswith('cache-control:'):
+            directives = line.split(':', 1)[1].strip().split(',')
+            for directive in directives:
+                directive = directive.strip().lower()
+                if '=' in directive:
+                    key, value = directive.split('=', 1)
+                    cache_control[key.strip()] = value.strip()
+                else:
+                    cache_control[directive] = True
+      ttl = 300 if status_code == 404 else 7200
       clientSocket.sendall(originResponse)
       # ~~~~ END CODE INSERT ~~~~
 
@@ -214,6 +244,16 @@ while True:
 
       # Save origin server response in the cache file
       # ~~~~ INSERT CODE ~~~~
+      if 'max-age' in cache_control:
+        max_age = int(cache_control['max-age'])
+        expiration = datetime.now() + timedelta(seconds=max_age)
+      else:
+        expiration = datetime.now() + timedelta(seconds=ttl)
+        
+      cache_meta = {
+              'expires': expiration.isoformat()
+          }
+      cacheFile.write((json.dumps(cache_meta) + '\n').encode('utf-8'))
       cacheFile.write(originResponse)
       # ~~~~ END CODE INSERT ~~~~
       cacheFile.close()
