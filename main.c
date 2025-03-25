@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import re
+import datetime
 
 # 1MB buffer size
 BUFFER_SIZE = 1000000
@@ -56,7 +57,7 @@ while True:
   # Accept connection from client and store in the clientSocket
   try:
     # ~~~~ INSERT CODE ~~~~
-    clientSocket, address = server.accept()
+    clientSocket, addr = server.accept()
     # ~~~~ END CODE INSERT ~~~~
     print ('Received a connection')
   except:
@@ -66,6 +67,7 @@ while True:
   # Get HTTP request from client
   # and store it in the variable: message_bytes
   # ~~~~ INSERT CODE ~~~~
+  message = clientSocket.recv(1024)
   # ~~~~ END CODE INSERT ~~~~
   message = message_bytes.decode('utf-8')
   print ('Received request:')
@@ -118,6 +120,9 @@ while True:
     # ProxyServer finds a cache hit
     # Send back response to client 
     # ~~~~ INSERT CODE ~~~~
+    with open(cacheLocation, 'rb') as cacheFile:
+        binaryCacheData = cacheFile.read()
+        clientSocket.sendall(binaryCacheData)
     # ~~~~ END CODE INSERT ~~~~
     cacheFile.close()
     print ('Sent to the client:')
@@ -128,6 +133,7 @@ while True:
     # Create a socket to connect to origin server
     # and store in originServerSocket
     # ~~~~ INSERT CODE ~~~~
+    originServerSocket = socket.socket()
     # ~~~~ END CODE INSERT ~~~~
 
     print ('Connecting to:\t\t' + hostname + '\n')
@@ -136,6 +142,8 @@ while True:
       address = socket.gethostbyname(hostname)
       # Connect to the origin server
       # ~~~~ INSERT CODE ~~~~
+      port = 8080
+      server.bind((address,port))
       # ~~~~ END CODE INSERT ~~~~
       print ('Connected to origin Server')
 
