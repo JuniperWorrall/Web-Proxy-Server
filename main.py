@@ -178,6 +178,26 @@ while True:
       # Get the response from the origin server
       # ~~~~ INSERT CODE ~~~~
       originResponse = originServerSocket.recv(BUFFER_SIZE)
+      response_str = originResponse.decode('utf-8')
+
+      if "HTTP/1.1 301" in response_str or "HTTP/1.1 302" in response_str:
+        location = None
+        for line in response_str.split('\r\n'):
+          if line.startswith('location:'):
+            location = line.split(':',1)[1].strip()
+            break
+        
+        if location:
+          print("Redirect to:" + location)
+          new_hostname = re.sub('^(http://|https://)', '', location).split('/')[0]
+          new_resource = '/' + '/'.join(location.split('/')[3:])
+          originRedirectSocket = socket.socket()
+          originRedirectSocket.connect((new_hostname, 80))
+          new_request = f"{method} {new_resource} {version}\r\nHost: {new_hostname}\r\nConnection: close\r\nVia: 1.1 python-proxy\r\n\r\n"
+          originRedirectSocket.send(new_request.encode())
+        
+          originResponse = originRedirectSocket.recv(BUFFER_SIZE)
+          originRedirectSocket.close()
       # ~~~~ END CODE INSERT ~~~~
 
       # Send the response to the client
