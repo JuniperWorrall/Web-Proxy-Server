@@ -1,3 +1,5 @@
+# I added part three of the bonus mark question, when separating the hostname from the resource
+# I check for a port, if it exists separate then assign that number to variable port otherwise port = 80
 # Include the libraries for socket and system calls
 import socket
 import sys
