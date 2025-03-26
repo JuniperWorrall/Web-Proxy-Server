@@ -1,5 +1,6 @@
 # I added part three of the bonus mark question, when separating the hostname from the resource
 # I check for a port, if it exists separate then assign that number to variable port otherwise port = 80
+# I changed line 97 - 105
 # Include the libraries for socket and system calls
 import socket
 import sys
@@ -94,15 +95,15 @@ while True:
   URI = URI.replace('/..', '')
 
   # Split hostname from resource name
-  host_port_part, *resource_parts = URI.split('/', 1)
-  resource = '/' + resource_parts[0] if resource_parts else '/'
+  host_port_part, *resource_parts = URI.split('/', 1) # Split URI into hostname + port and all resource paths
+  resource = '/' + resource_parts[0] if resource_parts else '/' # Construct all resource paths into one string
 
-  if ':' in host_port_part:
-    hostname, port_str = host_port_part.split(':', 1)
+  if ':' in host_port_part: # If there is a port
+    hostname, port_str = host_port_part.split(':', 1) # Split hostname and port
     port = int(port_str)
   else:
     hostname = host_port_part
-    port = 80
+    port = 80 # default port 80
 
   print ('Requested Resource:\t' + resource)
 
